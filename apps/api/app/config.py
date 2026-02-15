@@ -15,6 +15,7 @@ def find_env_file() -> Path | None:
 
 class Settings(BaseSettings):
     openai_api_key: str = ""
+    openai_model: str = "gpt-5-mini"
     database_url: str = "sqlite:///./data/app.db"
 
     model_config = ConfigDict(

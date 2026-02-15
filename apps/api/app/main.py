@@ -4,7 +4,7 @@ import httpx
 from fastapi import FastAPI
 
 from app.database import init_db
-from app.routers import references, search
+from app.routers import messages, references, search
 
 
 @asynccontextmanager
@@ -18,6 +18,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Message Writer API", lifespan=lifespan)
 app.include_router(search.router)
 app.include_router(references.router)
+app.include_router(messages.router)
 
 
 @app.get("/health")
