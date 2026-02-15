@@ -1,5 +1,7 @@
+import json
+
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -11,8 +13,10 @@ from app.schemas.references import (
     ReferenceListResponse,
     ReferenceResponse,
     SaveFromPubMedRequest,
+    UploadResponse,
 )
 from app.services.chunking import chunk_text
+from app.services.pdf_extraction import extract_text_from_pdf
 from app.services.pubmed_client import PubMedClient, get_pubmed_client
 
 router = APIRouter(prefix="/references", tags=["references"])
@@ -74,6 +78,53 @@ async def save_from_pubmed(
     db.refresh(ref)
 
     return _to_response(ref, len(chunks_text))
+
+
+@router.post("/upload", response_model=UploadResponse, status_code=201)
+def upload_pdf(
+    file: UploadFile = File(...),
+    title: str | None = Form(None),
+    db: Session = Depends(get_db),
+) -> UploadResponse:
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+
+    pdf_bytes = file.file.read()
+
+    if len(pdf_bytes) > 50_000_000:
+        raise HTTPException(status_code=413, detail="File too large (max 50MB)")
+
+    if not pdf_bytes[:5].startswith(b"%PDF-"):
+        raise HTTPException(status_code=400, detail="Invalid PDF file")
+
+    ref_title = title or file.filename or "Untitled"
+
+    ref = Reference(title=ref_title, source="pdf_upload", status="processing")
+    db.add(ref)
+    db.flush()
+
+    try:
+        text = extract_text_from_pdf(pdf_bytes)
+    except Exception as e:
+        ref.status = "failed"
+        ref.extraction_meta = json.dumps({"error": str(e)})
+        db.commit()
+        return UploadResponse(
+            reference_id=ref.id, title=ref.title, status="failed",
+            char_count=0, chunk_count=0,
+        )
+
+    chunks = chunk_text(text)
+    for i, content in enumerate(chunks):
+        db.add(Chunk(reference_id=ref.id, content=content, chunk_index=i))
+
+    ref.status = "processed"
+    db.commit()
+
+    return UploadResponse(
+        reference_id=ref.id, title=ref.title, status="processed",
+        char_count=len(text), chunk_count=len(chunks),
+    )
 
 
 @router.get("/", response_model=ReferenceListResponse)
