@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sse_starlette import EventSourceResponse
 
 from app.config import settings
 from app.database import get_db
@@ -22,6 +23,7 @@ from app.services.llm_provider import (
     MockProvider,
     OpenAIProvider,
 )
+from app.services.stream_generation import stream_generate_pipeline
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
@@ -41,6 +43,17 @@ def generate(
     response = generate_message(db, request.prompt, request.reference_ids, llm, request.top_k)
     db.commit()
     return response
+
+
+@router.post("/generate/stream")
+async def generate_stream(
+    request: GenerateRequest,
+    db: Session = Depends(get_db),
+    llm: LLMProvider = Depends(get_llm_provider),
+):
+    return EventSourceResponse(
+        stream_generate_pipeline(db, request.prompt, request.reference_ids, llm, request.top_k)
+    )
 
 
 @router.get("/", response_model=list[MessageSummary])
