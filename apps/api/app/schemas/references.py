@@ -30,3 +30,11 @@ class ReferenceResponse(BaseModel):
 
 class ReferenceListResponse(BaseModel):
     references: list[ReferenceResponse]
+
+
+class UploadResponse(BaseModel):
+    reference_id: int
+    title: str
+    status: str
+    char_count: int
+    chunk_count: int

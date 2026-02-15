@@ -16,4 +16,5 @@ class Reference(Base):
     abstract: Mapped[str | None] = mapped_column(Text, nullable=True)
     source: Mapped[str] = mapped_column(String)
     status: Mapped[str] = mapped_column(String, default="active")
+    extraction_meta: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
