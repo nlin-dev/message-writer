@@ -1,0 +1,54 @@
+# Documentation
+.a/
+
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.benchmarks/
+.coverage
+htmlcov/
+coverage.xml
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+
+# Misc
+*.bak
+*.tmp
+Thumbs.db
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/
