@@ -118,6 +118,7 @@ def upload_pdf(
     for i, content in enumerate(chunks):
         db.add(Chunk(reference_id=ref.id, content=content, chunk_index=i))
 
+    db.add(WorkingSetItem(reference_id=ref.id))
     ref.status = "processed"
     db.commit()
 
